@@ -1,10 +1,13 @@
 # README
 
-# 📘 Dynamic SVM Weighting for MMSE Optimization
+# 📘 MMSE Analysis Toolkit
 
-This project provides a complete machine-learning–based analysis workflow for evaluating cognitive assessment data across four education levels: **Illiterate**, **Primary School**, **Middle School**, and **College**.
+This project provides two complete analysis pipelines for Mini-Mental State Examination (MMSE) data:
 
-The program trains multiple models, generates ROC curves, and outputs performance metrics into an Excel report.
+1. **Machine-learning–based ROC analysis** across four education levels (Illiterate, Primary School, Middle School, College).
+2. **Custom weighted scoring analysis** using a JSON configuration for different education levels.
+
+Both pipelines output structured results, including Excel summary files and diagnostic plots.
 
 ---
 
@@ -13,162 +16,167 @@ The program trains multiple models, generates ROC curves, and outputs performanc
 ```
 project/
 │── script/
-│   └── run.bat               # Batch script to execute the analysis
+│   ├── run.bat                # Run machine learning analysis (Windows)
+│   └── run_by_level.sh        # Run weighted scoring analysis (Linux / macOS)
 │
 │── src/
-│   └── run.py                # Main Python analysis script
+│   ├── run.py                 # ML model training + ROC curve generation
+│   ├── run_by_level.py        # Education-level–specific weighted scoring analysis
+│   └── weights_by_level.json  # Weight & threshold configuration
 │
-│── data/                     # Input data (Excel files)
+│── data/
 │   ├── 文盲.xlsx
 │   ├── 小学.xlsx
 │   ├── 中学.xlsx
-│   └── 大学.xlsx
+│   ├── 大学.xlsx
+│   └── 亳州市社区调研MMSE.xlsx
 │
-└── results/                  # Output directory
+└── results/                    # Output directory (generated automatically)
 ```
 
 ---
 
-## 📜 Batch Script (script/run.bat)
+# 1️⃣ Machine Learning Analysis (run.py)
 
-```bat
-@echo off
-echo Running data analysis...
-
-:: Execute Python script with data directory
-python src/run.py --data-dir data --output-dir results
-
-echo Done!
-pause
-```
-
-This script automatically runs the analysis and stores all results in the `results/` folder.
+This pipeline trains multiple machine learning models for each education level and generates ROC curves.
 
 ---
 
-## 🔍 What the Analysis Script Does (src/run.py)
+## 🔍 Features
 
-The `run.py` program performs the full machine-learning workflow:
+### ✔ Reads four separate Excel files:
 
----
+* 文盲.xlsx
+* 小学.xlsx
+* 中学.xlsx
+* 大学.xlsx
 
-### **1. Data Loading**
-
-Reads 4 Excel datasets:
-
-* 文盲.xlsx (Illiterate)
-* 小学.xlsx (Primary School)
-* 中学.xlsx (Middle School)
-* 大学.xlsx (College)
-
-Data is cleaned by removing rows with missing values and resetting indices.
-
----
-
-### **2. Model Training (5-Fold Cross-Validation)**
-
-For each education level, the following models are trained:
+### ✔ Trains five ML models:
 
 * Logistic Regression
-* Support Vector Machine (SVM)
+* SVM
 * Decision Tree
 * Random Forest
 * Gradient Boosting (GBDT)
 
-For every model, the script computes:
+### ✔ Generates:
 
-* **Cross-validation accuracy**
-* **ROC curve**
-* **AUC value**
-
----
-
-### **3. ROC Curve Generation**
-
-For each model and education level, the script generates a figure:
-
-```
-{ModelName}{EducationLevel}ROC.png
-```
-
-All images are automatically moved to the output directory.
-
----
-
-### **4. Final Excel Report**
-
-A summary table is saved as:
-
-```
-results.xlsx
-```
-
-Columns include:
-
-| Education Level | MMSE Accuracy | Logistic Regression | SVM | Decision Tree | Random Forest | GBDT |
-| --------------- | ------------- | ------------------- | --- | ------------- | ------------- | ---- |
+* ROC curves for each model × education level
+* An Excel summary table `结果.xlsx`
 
 ---
 
 ## ▶️ How to Run
 
-### ✔️ **Method 1: Double-click the batch file (Recommended)**
+### **Windows**
 
-Run:
+Double-click:
 
 ```
 script/run.bat
 ```
 
-This will:
-
-* Read data from `data/`
-* Save all results to `results/`
-
----
-
-### ✔️ **Method 2: Run manually from command line**
+or run manually:
 
 ```bash
 python src/run.py --data-dir data --output-dir results
 ```
 
-If no output directory is specified:
+---
 
-```bash
-python src/run.py --data-dir data
+# 2️⃣ Weighted MMSE Scoring (run_by_level.py)
+
+This pipeline evaluates MMSE using **custom weights and thresholds** for each education level.
+
+The weights are defined in:
+
+```
+src/weights_by_level.json
 ```
 
-results will be saved in the data folder.
+### Example JSON snippet:
+
+```json
+"文盲": {
+    "时间": 1,
+    "空间": 3,
+    "记忆": 2,
+    ...
+    "阈值": 30
+}
+```
+
+### ✔ What the script does:
+
+* Reads **a single MMSE Excel file**
+* Normalizes column names automatically
+* Applies **different weights** for each education level
+* Computes:
+
+  * Weighted score
+  * Accuracy
+  * Threshold used
+  * Score distributions
+* Computes MMSE original score accuracy
+* Outputs a multi-sheet Excel file:
+
+```
+MMSE分析结果_自定义加权.xlsx
+```
+
+Sheets include:
+
+1. Accuracy comparison
+2. Data summary
+3. Weight configuration
+4. Weighted scoring details
+5. MMSE scoring details
 
 ---
 
-## 📦 Dependencies
+## ▶️ How to Run Weighted Analysis
 
-Install required packages:
+### **Linux / macOS**
 
-```bash
-pip install numpy pandas matplotlib scikit-learn plottable
+```
+bash script/run_by_level.sh
 ```
 
-⚠️ For ROC plot labels, ensure your environment supports **Chinese font “SimHei”** to avoid garbled text.
+### **Manual execution**
+
+```bash
+python src/run_by_level.py \
+    --data-path data/亳州市社区调研MMSE.xlsx \
+    --output-dir results \
+    --weights-file src/weights_by_level.json
+```
 
 ---
 
-## 📊 Output Files
+# 📦 Dependencies
 
-After running the script, the `results/` folder will contain:
+Install required Python packages:
+
+```bash
+pip install numpy pandas matplotlib scikit-learn plottable openpyxl
+```
+
+---
+
+# 📊 Output Examples
+
+After running both pipelines, the `results/` folder will contain:
 
 ```
-results.xlsx
-LogisticRegression_Illiterate_ROC.png
-LogisticRegression_PrimarySchool_ROC.png
+结果.xlsx                          # ML model summary
+MMSE分析结果_自定义加权.xlsx        # Weighted analysis results
+SVM小学ROC.png
+随机森林大学ROC.png
 ...
-GBDT_College_ROC.png
 ```
 
 ---
 
-## 📝 License
+# 📝 License
 
-This project is free to use, modify, and extend.
+This project is free to use, modify, and redistribute.

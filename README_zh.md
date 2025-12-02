@@ -2,8 +2,12 @@
 
 # 📘 SVM动态加权对MMSE量表的优化
 
-本项目用于对不同文化程度（文盲、小学、中学、大学）的人群进行机器学习模型训练，并生成 ROC 曲线与性能评估表格。
-分析内容包含多种模型：Logistic Regression、SVM、决策树、随机森林、GBDT，并将结果自动保存到指定目录。
+本项目提供两套完整的 MMSE（简易精神状态检查）数据分析流程：
+
+1. **基于机器学习的 ROC 曲线分析**（按文化程度分组）
+2. **按文化程度进行自定义加权评分的分析**（使用 JSON 配置文件）
+
+两种分析均会自动生成结构化的结果文件，包括 Excel 结果与图形输出。
 
 ---
 
@@ -12,164 +16,169 @@
 ```
 project/
 │── script/
-│   └── run.bat               # 运行主程序的批处理脚本
+│   ├── run.bat                # 运行机器学习分析（Windows）
+│   └── run_by_level.sh        # 运行按学历加权分析（Linux / macOS）
 │
 │── src/
-│   └── run.py                # 主分析程序
+│   ├── run.py                 # 机器学习模型训练 + ROC 曲线绘制
+│   ├── run_by_level.py        # 按学历加权的 MMSE 分析脚本
+│   └── weights_by_level.json  # 不同学历的加权配置
 │
-│── data/                     # 输入数据（Excel 文件）
+│── data/
 │   ├── 文盲.xlsx
 │   ├── 小学.xlsx
 │   ├── 中学.xlsx
-│   └── 大学.xlsx
+│   ├── 大学.xlsx
+│   └── 亳州市社区调研MMSE.xlsx
 │
-└── results/                  # 输出的结果（首次运行自动创建）
+└── results/                    # 输出目录（执行后自动生成）
 ```
 
 ---
 
-## 📜 运行脚本（script/run.bat）
+# 1️⃣ 机器学习分析（run.py）
 
-```bat
-@echo off
-echo 正在运行数据分析程序...
-
-:: 运行Python脚本，传入data目录路径
-python src/run.py --data-dir data --output-dir results
-
-echo 运行完成！
-pause
-```
-
-此脚本会自动调用 `run.py` 并将分析结果输出到 `results/` 文件夹。
+该流程会对不同文化程度的数据分别训练多种机器学习模型，并生成 ROC 曲线。
 
 ---
 
-## 🔍 程序功能说明（src/run.py）
+## 🔍 功能说明
 
-`run.py` 会执行以下任务：
-
-### 1. **读取数据**
-
-从 `data/` 目录读取 4 个 Excel 文件：
+### ✔ 读取四个 Excel 文件（按文化程度分类）：
 
 * 文盲.xlsx
 * 小学.xlsx
 * 中学.xlsx
 * 大学.xlsx
 
-并自动清洗数据（删除空值行、重置索引）。
+### ✔ 训练五种机器学习模型：
 
----
-
-### 2. **模型训练（5 折交叉验证）**
-
-程序对每组文化程度分别训练下列模型：
-
-* Logistic Regression
-* SVM
+* 逻辑回归（Logistic Regression）
+* 支持向量机（SVM）
 * 决策树
-* 随机森林
-* GBDT
+* 随机森林（Random Forest）
+* 梯度提升树（GBDT）
 
-每个模型会计算：
+### ✔ 输出结果：
 
-* **准确率（交叉验证）**
-* **ROC 曲线**
-* **AUC 值**
-
----
-
-### 3. **绘制 ROC 曲线**
-
-程序会为每个模型生成：
-
-```
-{模型名}{文化程度}ROC.png
-```
-
-并自动移动到输出目录。
+* 每个模型 × 每个文化程度的 ROC 曲线
+* 结果汇总 Excel 文件：`结果.xlsx`
 
 ---
 
-### 4. **生成最终结果 Excel**
+## ▶️ 运行方式
 
-输出文件：
+### **Windows（推荐）**
 
-```
-结果.xlsx
-```
-
-内容包含：
-
-| 文化程度 | MMSE评定 | Logistic 回归 | SVM | 决策树 | 随机森林 | GBDT |
-| ---- | ------ | ----------- | --- | --- | ---- | ---- |
-| 文盲   | ...    | ...         | ... | ... | ...  | ...  |
-| 小学   | ...    | ...         | ... | ... | ...  | ...  |
-| 中学   | ...    | ...         | ... | ... | ...  | ...  |
-| 大学   | ...    | ...         | ... | ... | ...  | ...  |
-
----
-
-## ▶️ 如何运行
-
-### **方式一：直接双击运行脚本（推荐）**
-
-双击：
+直接双击：
 
 ```
 script/run.bat
 ```
 
-程序会：
-
-* 自动读取 `data/` 下的数据
-* 在 `results/` 下生成 ROC 图片与 Excel 结果
-
----
-
-### **方式二：命令行手动运行**
+或手动运行：
 
 ```bash
 python src/run.py --data-dir data --output-dir results
 ```
 
-如果不指定输出路径：
+---
+
+# 2️⃣ 按文化程度加权的 MMSE 分析（run_by_level.py）
+
+该流程使用 **不同文化程度对应的自定义加权值与阈值** 来评估 MMSE 结果。
+
+加权参数定义在：
+
+```
+src/weights_by_level.json
+```
+
+### 示例 JSON：
+
+```json
+"文盲": {
+    "时间": 1,
+    "空间": 3,
+    "记忆": 2,
+    ...
+    "阈值": 30
+}
+```
+
+---
+
+## ✔ 程序功能
+
+* 读取单个 Excel 文件（可包含多个 sheet）
+* 自动标准化列名（兼容不同格式）
+* 按学历应用不同的评分权重
+* 计算：
+
+  * 自定义加权分数
+  * 自定义阈值/预设阈值
+  * 加权评分准确率
+  * 分数分布
+* 计算传统 MMSE 总分的准确率
+* 输出带多个 sheet 的结果 Excel：
+
+```
+MMSE分析结果_自定义加权.xlsx
+```
+
+包含：
+
+1. 准确率对比
+2. 数据汇总
+3. 加权值配置
+4. 自定义评分详细
+5. 原始 MMSE 评分详细
+
+---
+
+## ▶️ 运行方式
+
+### **Linux / macOS**
 
 ```bash
-python src/run.py --data-dir data
+bash script/run_by_level.sh
 ```
 
-则所有输出会保存在 `data/` 下。
-
----
-
-## 📦 环境依赖
-
-请安装以下 Python 库：
+### **手动运行**
 
 ```bash
-pip install numpy pandas matplotlib scikit-learn plottable
-```
-
-⚠️ **注意：部分 ROC 绘图需要中文字体（SimHei）支持，否则可能出现乱码。**
-
----
-
-## 📊 输出示例
-
-程序运行后，`results/` 目录将包含：
-
-```
-结果.xlsx
-逻辑回归文盲ROC.png
-逻辑回归小学ROC.png
-……
-GBDT大学ROC.png
+python src/run_by_level.py \
+    --data-path data/亳州市社区调研MMSE.xlsx \
+    --output-dir results \
+    --weights-file src/weights_by_level.json
 ```
 
 ---
 
-## 📝 许可证
+# 📦 环境依赖
 
-本项目可自由修改和扩展。
+需要安装以下 Python 包：
+
+```bash
+pip install numpy pandas matplotlib scikit-learn plottable openpyxl
+```
+
+---
+
+# 📊 输出示例
+
+执行两套分析后，`results/` 文件夹中将包含：
+
+```
+结果.xlsx                          # 机器学习分析结果
+MMSE分析结果_自定义加权.xlsx        # 加权评分分析结果
+SVM小学ROC.png
+随机森林大学ROC.png
+...
+```
+
+---
+
+# 📝 许可证
+
+本项目可自由使用、修改和分发。
