@@ -1,6 +1,6 @@
 # README
 
-# 📘 MMSE Analysis Toolkit
+# 📘 Dynamic SVM Weighting for MMSE Optimization
 
 This project provides two complete analysis pipelines for Mini-Mental State Examination (MMSE) data:
 
@@ -178,5 +178,6 @@ SVM小学ROC.png
 ---
 
 # 📝 License
+
 
 This project is free to use, modify, and redistribute.
