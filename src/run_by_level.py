@@ -9,15 +9,22 @@ import json
 def calculate_custom_score(row, weights):
     """计算自定义加权分数"""
     score = 0
-    for col, weight in weights.items():
-        if col in row.index:
-            # 确保值是数值类型
+    test_items = ['时间', '空间', '记忆', '计算', '延迟回忆', '命名', '复述', '执行', '阅读', '书写', '空间结构']
+    
+    for item in test_items:
+        if item in weights and item in row.index:
             try:
-                value = float(row[col])
+                weight = float(weights[item])
+                # 强制获取第一个值（如果是Series）
+                if hasattr(row[item], '__len__') and not isinstance(row[item], (str, int, float)):
+                    value = float(row[item].iloc[0])
+                else:
+                    value = float(row[item])
                 score += value * weight
-            except (ValueError, TypeError):
-                # 如果转换失败，跳过该项
+            except Exception as e:
+                print(f"跳过 {item}: {e}")
                 continue
+    
     return score
 
 def calculate_accuracy(df_level, weights):
